@@ -41,7 +41,8 @@ GUIDANCE:
 - If the description is ambiguous and not clearly identified, use Uncategorized.
 - Do not change the amount sign or format; the amount field is informational only for categorization.
 
-Output ONLY the CSV with the additional "category" column appended. Do not include any explanations or markdown formatting. Once you output the categorized CSV, you are done—do not continue the conversation.
+Output ONLY the CSV with the additional "category" column appended. Do not include any explanations or markdown formatting. 
+Once you output the categorized CSV, you are done, do not continue the conversation. End with STOP.
 """
 
 # Task message for the categorizer
