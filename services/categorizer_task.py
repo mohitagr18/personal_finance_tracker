@@ -41,6 +41,14 @@ async def run_categorization():
 
     final_csv_text = None
     if chat_result and chat_result.messages:
+        
+        # --- START: ADD THIS DIAGNOSTIC CODE ---
+        print("\n--- Agent's Raw Response ---")
+        last_message_content = chat_result.messages[-1].content
+        print(last_message_content)
+        print("----------------------------\n")
+        # --- END: ADD THIS DIAGNOSTIC CODE ---
+
         for msg in reversed(chat_result.messages):
             if msg.source == agent.name and msg.content:
                 content_str = str(msg.content).strip()
