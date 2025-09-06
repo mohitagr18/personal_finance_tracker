@@ -23,7 +23,7 @@ def _extract_entity_text(entity: documentai.Document.Entity, document_text: str)
     return "".join(text_parts).strip()
 
 
-def _parse_bank_statement_info(document: documentai.Document) -> (Dict[str, Any], Dict):
+def _parse_bank_statement_info(document: documentai.Document) -> (Dict[str, Any]):
     """Parses high-level bank statement info and groups entities by type."""
     entities_by_type = {}
     for entity in document.entities:
