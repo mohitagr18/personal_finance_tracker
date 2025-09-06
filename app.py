@@ -6,11 +6,14 @@ from config import constants
 # This block must run before any code that uses Google Cloud services.
 gcp_creds_json = os.getenv("GCP_CREDENTIALS_JSON")
 if gcp_creds_json:
+    print("✅ GCP credentials secret was found in the environment.")
     os.makedirs(constants.TEMP_DIR, exist_ok=True)
     creds_path = os.path.join(constants.TEMP_DIR, "gcp_creds.json")
     with open(creds_path, "w") as f:
         f.write(gcp_creds_json)
     os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = creds_path
+else:
+    print("❌ ERROR: GCP_CREDENTIALS_JSON secret was NOT found.")
 # --- END GCP CREDENTIALS SETUP ---
 
 import os
