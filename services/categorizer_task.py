@@ -7,34 +7,12 @@ from autogen_agentchat.messages import TextMessage
 from config import constants
 from agents import categorizer_agent
 
-
-def _extract_csv_from_text(text: str) -> str | None:
-    """
-    A helper function to robustly extract CSV content from an agent's response,
-    which might be wrapped in markdown code fences.
-    """
-    if not text:
-        return None
-    # Prefer the first fenced block if present
-    fence_match = re.search(r"```(?:csv)?\\s*(.*?)\\s*```", text, flags=re.DOTALL | re.IGNORECASE)
-    if fence_match:
-        return fence_match.group(1).strip()
-    # Otherwise, assume the whole text is the CSV if it looks like one
-    if "\\n" in text and "," in text:
-        return text.strip()
-    return None
-
-
 async def run_categorization():
     """
     Runs the AutoGen agent workflow to categorize transactions.
-
-    This function reads the parsed transaction data, sends it to the categorizer
-    agent, and saves the agent's response (the categorized CSV) back to the same file.
     """
-    print("\n🚀 Starting transaction categorization...")
+    print("🚀 Starting transaction categorization...")
 
-    # 1. Read the parsed data from the CSV file
     try:
         with open(constants.CSV_PATH, "r", encoding="utf-8") as f:
             input_csv_text = f.read()
@@ -42,10 +20,8 @@ async def run_categorization():
         print(f"❌ Error: Input CSV not found at '{constants.CSV_PATH}'. Please run the parser first.")
         return
 
-    # 2. Get the pre-configured categorizer agent
     agent = categorizer_agent.get_agent()
 
-    # 3. Define the task message, including the CSV data
     task_message = TextMessage(
         content=(
             "The input CSV columns are exactly: bank_name, cardholder, transaction_date, description, amount.\\n"
@@ -56,26 +32,36 @@ async def run_categorization():
         source="user",
     )
 
-    # 4. Set up a simple, single-agent team
     team = RoundRobinGroupChat(
         participants=[agent],
         termination_condition=TextMentionTermination("STOP") | MaxMessageTermination(max_messages=2),
     )
 
-    # 5. Run the chat and get the result
     chat_result = await team.run(task=task_message)
 
-    # 6. Extract the CSV from the last message from the agent
     final_csv_text = None
     if chat_result and chat_result.messages:
-        for msg in reversed(chat_result.messages): # Check latest messages first
-            if msg.source == agent.name:
-                maybe_csv = _extract_csv_from_text(str(msg.content))
-                if maybe_csv:
-                    final_csv_text = maybe_csv
-                    break
-    
-    # 7. Overwrite the original CSV with the new categorized data
+        for msg in reversed(chat_result.messages):
+            if msg.source == agent.name and msg.content:
+                content_str = str(msg.content).strip()
+                
+                # --- START: ROBUST EXTRACTION LOGIC ---
+                # Find the start of the CSV content by looking for the known header.
+                header = "bank_name,cardholder,transaction_date,description,amount,Category"
+                header_index = content_str.find(header)
+                
+                if header_index != -1:
+                    # Take everything from the header to the end of the string.
+                    csv_block = content_str[header_index:]
+                    
+                    # Clean the trailing "STOP" keyword if it exists.
+                    if csv_block.endswith("STOP"):
+                        csv_block = csv_block[:-4].strip()
+                    
+                    final_csv_text = csv_block
+                    break  # Exit the loop once we've found and processed the CSV block.
+                # --- END: ROBUST EXTRACTION LOGIC ---
+
     if final_csv_text:
         with open(constants.CSV_PATH, "w", encoding="utf-8", newline="") as f:
             f.write(final_csv_text if final_csv_text.endswith("\\n") else final_csv_text + "\\n")

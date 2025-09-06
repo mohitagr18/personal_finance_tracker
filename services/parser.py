@@ -23,7 +23,7 @@ def _extract_entity_text(entity: documentai.Document.Entity, document_text: str)
     return "".join(text_parts).strip()
 
 
-def _parse_bank_statement_info(document: documentai.Document) -> (Dict[str, Any]):
+def _parse_bank_statement_info(document: documentai.Document) -> (Dict[str, Any], Dict):
     """Parses high-level bank statement info and groups entities by type."""
     entities_by_type = {}
     for entity in document.entities:
@@ -97,45 +97,89 @@ def _analyze_and_create_dataframe(document: documentai.Document) -> pd.DataFrame
 def _preprocess_transactions(df: pd.DataFrame) -> pd.DataFrame:
     """Cleans, coalesces, and standardizes the transaction DataFrame."""
     processed_df = df.copy()
-    
-    # Coalesce description and amount columns
-    processed_df['description'] = processed_df.get('table_item/transaction_withdrawal_description', pd.Series(dtype='str')).fillna(
-        processed_df.get('table_item/transaction_deposit_description', pd.Series(dtype='str'))
+
+    # Coalesce description, amount, and date columns from deposit/withdrawal fields
+    processed_df['description'] = processed_df.get('table_item/transaction_withdrawal_description').fillna(
+        processed_df.get('table_item/transaction_deposit_description')
     )
-    processed_df['amount'] = processed_df.get('table_item/transaction_withdrawal', pd.Series(dtype='str')).fillna(
-        processed_df.get('table_item/transaction_deposit', pd.Series(dtype='str'))
+    processed_df['amount'] = processed_df.get('table_item/transaction_withdrawal').fillna(
+        processed_df.get('table_item/transaction_deposit')
     )
-    processed_df['transaction_date'] = processed_df.get('table_item/transaction_withdrawal_date', pd.Series(dtype='str')).fillna(
-        processed_df.get('table_item/transaction_deposit_date', pd.Series(dtype='str'))
+    processed_df['transaction_date'] = processed_df.get('table_item/transaction_withdrawal_date').fillna(
+        processed_df.get('table_item/transaction_deposit_date')
     )
 
-    # Select and rename core columns
-    final_cols = ['bank_name', 'cardholder', 'transaction_date', 'description', 'amount']
-    processed_df = processed_df.reindex(columns=final_cols)
+    # Keep only the essential columns
+    processed_df = processed_df[['bank_name', 'cardholder', 'transaction_date', 'description', 'amount']].copy()
 
-    # Clean and filter data
+    # Drop records where the final 'amount' is missing or zero
     processed_df.dropna(subset=['amount'], inplace=True)
     processed_df = processed_df[~processed_df['amount'].isin(['$0.00', '+$0.00'])]
 
-    # Standardize date format
-    processed_df['transaction_date'] = pd.to_datetime(
-        processed_df['transaction_date'], errors='coerce'
-    ).dt.strftime('%Y-%m-%d')
+    # --- THIS IS THE CORRECTED DATE PARSING LOGIC ---
+    def standardize_date(date_str):
+        if pd.isna(date_str) or date_str == '':
+            return None
+        
+        date_str = str(date_str).strip()
+        current_year = pd.Timestamp.now().year
+        
+        # Try different date formats
+        date_formats = [
+            '%m/%d/%Y',    # MM/DD/YYYY
+            '%m-%d-%Y',    # MM-DD-YYYY  
+            '%Y-%m-%d',    # YYYY-MM-DD
+            '%b %d',       # Jun 25, Jul 7 (abbreviated month, no year)
+            '%B %d',       # June 25, July 7 (full month, no year)
+            '%b %d, %Y',   # Jun 25, 2024 (abbreviated month with year)
+            '%B %d, %Y',   # June 25, 2024 (full month with year)
+            '%d %b',       # 25 Jun (day first, abbreviated month)
+            '%d %B',       # 25 June (day first, full month)
+            '%d %b %Y',    # 25 Jun 2024 (day first with year)
+            '%d %B %Y',    # 25 June 2024 (day first with year)
+            '%m/%d',       # MM/DD (no year)
+            '%m-%d'        # MM-DD (no year)
+        ]
+        
+        for fmt in date_formats:
+            try:
+                if fmt in ['%m/%d', '%m-%d', '%b %d', '%B %d', '%d %b', '%d %B']:
+                    # Add current year for formats without year
+                    if fmt in ['%m/%d', '%m-%d']:
+                        parsed_date = pd.to_datetime(f"{current_year}/{date_str}", format=f'%Y/{fmt}')
+                    else:
+                        # For month name formats, append current year
+                        parsed_date = pd.to_datetime(f"{date_str} {current_year}", format=f'{fmt} %Y')
+                else:
+                    parsed_date = pd.to_datetime(date_str, format=fmt)
+                
+                # Return as YYYY-MM-DD string format
+                return parsed_date.strftime('%Y-%m-%d')
+            except (ValueError, TypeError):
+                continue
+        
+        # Last resort - let pandas try to parse
+        try:
+            parsed_date = pd.to_datetime(date_str, errors='coerce')
+            if pd.notna(parsed_date):
+                return parsed_date.strftime('%Y-%m-%d')
+        except:
+            pass
+        
+        return None
     
+    # Apply date standardization
+    processed_df['transaction_date'] = processed_df['transaction_date'].apply(standardize_date)
+    
+    # Drop records with invalid dates
     processed_df.dropna(subset=['transaction_date'], inplace=True)
     
     return processed_df
 
 
 # --- Public API Function ---
-
 def run_parsing():
-    """
-    Main function to process all PDF statements in the statements folder.
-
-    It uses Google Document AI to parse each file, extracts transactions, combines
-    them into a single DataFrame, and saves the result to a CSV file in the temp directory.
-    """
+    # ... (The rest of this function remains the same as before) ...
     all_cleaned_dfs = []
 
     print(f"🚀 Starting batch processing for files in '{constants.STATEMENTS_FOLDER}'...")
@@ -177,7 +221,6 @@ def run_parsing():
     if all_cleaned_dfs:
         final_df = pd.concat(all_cleaned_dfs, ignore_index=True)
         
-        # Ensure temp directory exists before saving
         os.makedirs(constants.TEMP_DIR, exist_ok=True)
         final_df.to_csv(constants.CSV_PATH, index=False)
         

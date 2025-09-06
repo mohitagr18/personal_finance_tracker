@@ -42,8 +42,8 @@ Workflow 1: Broad Questions (Full Report)
   * Parse amount as signed float; negatives are refunds/credits.
   * Normalize merchant/description (upper-case, collapse spaces, strip obvious city/state suffixes); blank Category -> "Uncategorized".
 - Formatting helpers used everywhere:
-  * fmt_money = lambda v: f"${v:,.2f}"
-  * fmt_pct = lambda p: f"{p:.2f}%"
+  * fmt_money = lambda v: f"${{v:,.2f}}"
+  * fmt_pct = lambda p: f"{{p:.2f}}%"
 - Visualization style: seaborn theme, readable titles/labels/ticks, annotate bars with values where space allows.
 - Image handling (strict):
   * Save every chart as a PNG in the current working directory (no subdirectories).
@@ -122,7 +122,7 @@ def ensure_package(package_name, import_name=None):
     try:
         return importlib.import_module(import_name)
     except ImportError:
-        print(f"⏳ Installing {package_name}..."); sys.stdout.flush()
+        print(f"⏳ Installing {{package_name}}..."); sys.stdout.flush()
         subprocess.check_call([sys.executable, "-m", "pip", "install", package_name])
         return importlib.import_module(import_name)
 
@@ -130,22 +130,22 @@ generated_images = []  # (path, base64_len)
 
 def embed_image(image_path, report_content):
     try:
-        print(f"🖼️ Embedding image: {image_path}"); sys.stdout.flush()
+        print(f"🖼️ Embedding image: {{image_path}}"); sys.stdout.flush()
         b64 = base64.b64encode(Path(image_path).read_bytes()).decode()
-        report_content += f"\\n![{Path(image_path).stem}](data:image/png;base64,{b64})\\n\\n"
+        report_content += f"\\n![{{Path(image_path).stem}}](data:image/png;base64,{{b64}})\\n\\n"
         generated_images.append((str(image_path), len(b64)))
     except Exception as e:
-        msg = f"*Error embedding image {image_path}: {e}*"
-        print(f"⚠️ {msg}"); sys.stdout.flush()
-        report_content += f"\\n{msg}\\n\\n"
+        msg = f"*Error embedding image {{image_path}}: {{e}}*"
+        print(f"⚠️ {{msg}}"); sys.stdout.flush()
+        report_content += f"\\n{{msg}}\\n\\n"
     return report_content
 
 def save_fig(fig, filename):
     try:
         fig.savefig(filename, dpi=150, bbox_inches='tight')
-        print(f"✅ Successfully saved file: {filename}")
+        print(f"✅ Successfully saved file: {{filename}}")
     except Exception as e:
-        print(f"⚠️ Failed to save figure {filename}: {e}")
+        print(f"⚠️ Failed to save figure {{filename}}: {{e}}")
     finally:
         try:
             import matplotlib.pyplot as plt
@@ -160,7 +160,7 @@ def df_to_markdown(df):
         _ = ensure_package("tabulate")
         return df.to_markdown(index=False)
     except Exception as e:
-        print(f"ℹ️ Falling back to plain text table: {e}"); sys.stdout.flush()
+        print(f"ℹ️ Falling back to plain text table: {{e}}"); sys.stdout.flush()
         return df.to_string(index=False)
 
 def placeholder_chart(title, message, filename):
@@ -177,7 +177,7 @@ def find_data_file():
     print("🔍 Searching for data file..."); sys.stdout.flush()
     for path in ["{CSV_ABS_PATH}", "temp/data.csv", "../temp/data.csv", "../../temp/data.csv", "../../../temp/data.csv", "data.csv"]:
         if os.path.exists(path):
-            print(f"✅ Found data file: {path}"); sys.stdout.flush()
+            print(f"✅ Found data file: {{path}}"); sys.stdout.flush()
             return path
     print("❌ No data file found in expected locations. Please ensure 'temp/data.csv' exists."); sys.stdout.flush()
     return None
@@ -196,9 +196,9 @@ try:
     data_file_path = find_data_file()
     if data_file_path is None: sys.exit(1)
 
-    print(f"📂 Loading data from: {data_file_path}"); sys.stdout.flush()
+    print(f"📂 Loading data from: {{data_file_path}}"); sys.stdout.flush()
     df = pd.read_csv(data_file_path, encoding="utf-8-sig",
-                     dtype={"bank_name":"string","cardholder":"string","description":"string","Category":"string"})
+                     dtype={{"bank_name":"string","cardholder":"string","description":"string","Category":"string"}})
 
     # Normalize
     if "amount" in df.columns:
@@ -215,24 +215,24 @@ try:
                     df.loc[na, "transaction_date"] = pd.to_datetime(orig[na], format=fmt, errors="coerce")
             unparsed = df["transaction_date"].isna().sum()
             if unparsed>0:
-                print(f"⚠️ Could not parse {unparsed} date values"); sys.stdout.flush()
+                print(f"⚠️ Could not parse {{unparsed}} date values"); sys.stdout.flush()
     for col in ["bank_name","cardholder","description","Category"]:
         if col in df.columns:
             df[col] = df[col].fillna("").astype("string").str.strip()
 
     before=len(df); df=df[df["amount"].notna()]; after=len(df)
-    if before>after: print(f"🧹 Dropped {before-after} rows with invalid amounts."); sys.stdout.flush()
+    if before>after: print(f"🧹 Dropped {{before-after}} rows with invalid amounts."); sys.stdout.flush()
     if "transaction_date" in df.columns:
         missing_dates = df["transaction_date"].isna().sum()
-        if missing_dates>0: print(f"⚠️ {missing_dates} rows have unparsed dates but valid amounts - keeping them."); sys.stdout.flush()
+        if missing_dates>0: print(f"⚠️ {{missing_dates}} rows have unparsed dates but valid amounts - keeping them."); sys.stdout.flush()
 # ----------------- BOILERPLATE END -----------------
     # <<< YOUR ANALYSIS CODE GOES HERE >>>
     # Build report content in a variable; generate tables and charts; enforce quality gate.
 # ----------------- ERROR HANDLING START -----------------
 except FileNotFoundError as e:
-    print(f"⚠️ File not found error: {e}. Please ensure the data file exists at temp/data.csv."); sys.stdout.flush(); sys.exit(1)
+    print(f"⚠️ File not found error: {{e}}. Please ensure the data file exists at temp/data.csv."); sys.stdout.flush(); sys.exit(1)
 except Exception as e:
-    print(f"An unexpected error occurred: {e}"); print(f"Traceback: {traceback.format_exc()}"); sys.stdout.flush(); sys.exit(1)
+    print(f"An unexpected error occurred: {{e}}"); print(f"Traceback: {{traceback.format_exc()}}"); sys.stdout.flush(); sys.exit(1)
 finally:
     print("✅ Analysis script finished."); sys.stdout.flush()
 # ----------------- ERROR HANDLING END -----------------

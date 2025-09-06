@@ -33,7 +33,7 @@ OPENAI_API_KEY = os.getenv("OPENAI_API_KEY2")
 
 # Model identifiers used for different tasks
 # Model for the transaction categorization task
-CATEGORIZER_MODEL = os.getenv("CATEGORIZER_MODEL", "gpt-4.1-mini")
+CATEGORIZER_MODEL = os.getenv("CATEGORIZER_MODEL", "gpt-4o")
 # Model for the final report generation task
 ANALYZER_MODEL = os.getenv("ANALYZER_MODEL", "gpt-4o")
 
