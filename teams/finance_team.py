@@ -1,8 +1,9 @@
+# teams/finance_team.py
+
 from autogen_agentchat.teams import RoundRobinGroupChat
 from autogen_agentchat.conditions import MaxMessageTermination, TextMentionTermination
-from autogen_agentchat.agents import Agent
 
-def create_team(analyzer_agent: Agent, executor_agent: Agent) -> RoundRobinGroupChat:
+def create_team(analyzer_agent, executor_agent) -> RoundRobinGroupChat:
     """
     Creates and configures the finance analysis team.
 
@@ -11,8 +12,8 @@ def create_team(analyzer_agent: Agent, executor_agent: Agent) -> RoundRobinGroup
     agent says "STOP" or after a set number of messages.
 
     Args:
-        analyzer_agent (Agent): The pre-configured data analyzer agent.
-        executor_agent (Agent): The pre-configured code executor agent.
+        analyzer_agent: The pre-configured data analyzer agent.
+        executor_agent: The pre-configured code executor agent.
 
     Returns:
         (RoundRobinGroupChat): An instance of the configured agent team.

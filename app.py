@@ -1,4 +1,19 @@
 import os
+import json
+from config import constants
+
+# --- GCP CREDENTIALS SETUP ---
+# This block must run before any code that uses Google Cloud services.
+gcp_creds_json = os.getenv("GCP_CREDENTIALS_JSON")
+if gcp_creds_json:
+    os.makedirs(constants.TEMP_DIR, exist_ok=True)
+    creds_path = os.path.join(constants.TEMP_DIR, "gcp_creds.json")
+    with open(creds_path, "w") as f:
+        f.write(gcp_creds_json)
+    os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = creds_path
+# --- END GCP CREDENTIALS SETUP ---
+
+import os
 import uuid
 import asyncio
 from datetime import datetime, timezone
