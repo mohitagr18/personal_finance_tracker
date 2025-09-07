@@ -1,6 +1,3 @@
-camelot-py[cv]>=0.11
-tabula-py>=2.9.0
-pdfplumber>=0.11.0
 pandas
 autogen-agentchat>=0.7.2
 autogen-core>=0.7.2
@@ -12,11 +9,8 @@ ipykernel
 autogen-ext[http-tool]
 autogen-ext[openai]
 autogen-ext[anthropic]
-langchain-community
-langchain
 docker
 autogen-ext[docker]
 streamlit
-pypdf
 google-cloud-documentai
 google-cloud-core
