@@ -45,7 +45,6 @@ This app uses Google's Document AI to read your PDFs, then unleashes a team of A
 │   └── parser.py
 ├── teams/                  # AutoGen team definitions
 │   └── finance_team.py
-├── .env.example            # Example environment file
 ├── .gitignore
 ├── README.md               # This file
 ├── requirements.txt        # Python dependencies
