@@ -170,14 +170,21 @@ if 'last_run_dir' in st.session_state:
             # --- PDF CONVERSION AND DOWNLOAD BUTTON ---
             try:
                 from markdown_pdf import MarkdownPdf, Section
-                pdf = MarkdownPdf(toc_level=2)  # Initialize with table of contents level
-                pdf.add_section(Section(report_content, toc=False))  # Wrap content in Section
-                pdf.file_path = os.path.join(work_dir, "financial_report.pdf")
-                pdf.save()
+                import os
+
+                # 1. Define the full path where the PDF will be saved
+                pdf_path = os.path.join(work_dir, "financial_report.pdf")
+
+                pdf = MarkdownPdf(toc_level=2)
+                pdf.add_section(Section(report_content, toc=False))
                 
-                with open(pdf.file_path, "rb") as pdf_file:
+                # 2. Pass the path directly as an argument to the save() method
+                pdf.save(file_name=pdf_path)
+                
+                # 3. Read the bytes from that path for the download button
+                with open(pdf_path, "rb") as pdf_file:
                     pdf_bytes = pdf_file.read()
-                
+
                 st.download_button(
                     label="📥 Download Report as PDF",
                     data=pdf_bytes,
