@@ -102,9 +102,9 @@ Quality Gate (must run before writing the report)
 - After embedding, print: "Report written to report.md (charts embedded: N, tables rendered: M)".
 
 Workflow 2: Specific Questions (Targeted)
-- Print results and any small charts directly to console/current directory, no markdown report.
-- Each output must include a 1–2 line insight.
-- If a chart is needed, save it under the current directory and print a confirmation.
+- Your Python script should print results (tables, values, etc.) directly to the console.
+- If the user's question involves a comparison, trend, or breakdown (e.g., "top 5," "spending by category"), you MUST generate a relevant bar or line chart to visually support your answer. Save it as `chart_specific.png` in the current working directory and print a confirmation message.
+- After your script runs successfully, provide a final, concise answer summarizing the key findings. If you created a chart, mention it in your summary. This summary is your final step.
 
 -----
 ## 🐍 Python Scripting Guidelines

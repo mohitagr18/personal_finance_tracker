@@ -1,24 +1,7 @@
 import os
-import json
-from config import constants
-
-# --- GCP CREDENTIALS SETUP ---
-# This block must run before any code that uses Google Cloud services.
-gcp_creds_json = os.getenv("GCP_CREDENTIALS_JSON")
-if gcp_creds_json:
-    print("✅ GCP credentials secret was found in the environment.")
-    os.makedirs(constants.TEMP_DIR, exist_ok=True)
-    creds_path = os.path.join(constants.TEMP_DIR, "gcp_creds.json")
-    with open(creds_path, "w") as f:
-        f.write(gcp_creds_json)
-    os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = creds_path
-else:
-    print("❌ ERROR: GCP_CREDENTIALS_JSON secret was NOT found.")
-# --- END GCP CREDENTIALS SETUP ---
-
-import os
 import uuid
 import asyncio
+import glob
 from datetime import datetime, timezone
 
 from autogen_agentchat.messages import TextMessage
@@ -28,43 +11,48 @@ from services import parser, categorizer_task
 from agents import data_analyzer_agent, code_executor_agent
 from teams import finance_team
 
+# --- GCP CREDENTIALS SETUP ---
+# This block must run before any code that uses Google Cloud services.
+gcp_creds_json = os.getenv("GCP_CREDENTIALS_JSON")
+if gcp_creds_json:
+    os.makedirs(constants.TEMP_DIR, exist_ok=True)
+    creds_path = os.path.join(constants.TEMP_DIR, "gcp_creds.json")
+    with open(creds_path, "w") as f:
+        f.write(gcp_creds_json)
+    os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = creds_path
+# --- END GCP CREDENTIALS SETUP ---
+
 async def main():
     """
     Main asynchronous function to run the end-to-end financial analysis workflow.
     """
     # --- 1. PDF Parsing ---
-    # Process all PDF files in the 'statements' folder and create a single CSV
-    # in the 'temp' directory.
     parser.run_parsing()
 
     # --- 2. Transaction Categorization ---
-    # Run the categorizer agent to add a 'Category' column to the CSV file.
     await categorizer_task.run_categorization()
 
     # --- 3. Report Generation ---
     print("\n🚀 Starting final report generation...")
-
-    # Create a unique, timestamped directory for this run's output.
+    
     run_id = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S_") + uuid.uuid4().hex[:8]
     work_dir = os.path.join(constants.TEMP_DIR, f"run_{run_id}")
     output_dir = os.path.join(work_dir, "output")
     os.makedirs(output_dir, exist_ok=True)
     print(f"Created working directory: {work_dir}")
 
-    # Get the pre-configured agents. The executor needs the unique work_dir.
     analyzer = data_analyzer_agent.get_agent()
     executor = code_executor_agent.get_agent(work_dir)
     
-    # Create the team
     team = finance_team.create_team(analyzer, executor)
     
-    # Define the user's question for the analysis.
-    user_question = (
-        "Analyze the CSV and produce a comprehensive markdown report with monthly spend trends by cardholder, "
-        "by Category, and top merchants inferred from the description field, including at least two charts."
-    )
+    # --- CHOOSE YOUR QUESTION TYPE ---
+    # Example for Workflow 1 (Broad Report)
+    user_question = "Analyze the CSV and produce a comprehensive report."
+    
+    # Example for Workflow 2 (Specific Question with Chart)
+    # user_question = "What are the top 5 merchants by total spending? Show me a chart."
 
-    # Compose the initial task message for the team.
     task = TextMessage(
         content=(
             "You must read the CSV directly from temp/data.csv using the absolute path provided in your system prompt. "
@@ -77,20 +65,40 @@ async def main():
         source="user"
     )
 
-    # Run the team chat.
     chat_result = await team.run(task=task)
 
+    # --- START: CORRECTED FINAL OUTPUT LOGIC ---
     print("\n===================================================")
     print(f"🎉 Analysis workflow complete!")
     print(f"Run directory: {work_dir}")
-    print(f"Output directory: {output_dir}")
-    print("If a report was generated, it should be in the output directory.")
+
+    report_path = os.path.join(work_dir, "report.md")
+    if os.path.exists(report_path):
+        print(f"Output directory: {output_dir}")
+        print("A report was generated and should be in the output directory.")
+    else:
+        # For specific questions, print the agent's answer and link to any charts.
+        print("\n--- Final Answer ---")
+        final_answer = "No final answer found."
+        if chat_result and chat_result.messages:
+            for msg in reversed(chat_result.messages):
+                if msg.source == analyzer.name and msg.content:
+                    final_answer = msg.content
+                    break
+        print(final_answer)
+
+        # Check for generated chart files and announce them
+        chart_files = glob.glob(os.path.join(work_dir, "*.png"))
+        if chart_files:
+            print("\n--- Generated Charts ---")
+            for chart_file in chart_files:
+                print(f"Chart saved at: {chart_file}")
+            print("------------------------")
+
     print("===================================================")
+    # --- END: CORRECTED FINAL OUTPUT LOGIC ---
 
 
 if __name__ == "__main__":
-    # Ensure the temp directory exists before starting
     os.makedirs(constants.TEMP_DIR, exist_ok=True)
-    
-    # Run the main asynchronous event loop
     asyncio.run(main())
