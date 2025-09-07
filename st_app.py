@@ -17,6 +17,11 @@ from autogen_agentchat.messages import TextMessage
 st.set_page_config(page_title="AI Financial Analyst", layout="wide")
 st.title("🤖 AI Financial Data Analyst")
 
+st.markdown("""
+Welcome! This app uses Google's Document AI to read your PDFs, then unleashes a team of AutoGen agents powered by GPT-4o to answer your questions.
+It's a squad of financial robots ready to do your busywork, so you don't have to.
+""")
+
 # --- GCP CREDENTIALS SETUP ---
 gcp_creds_json = os.getenv("GCP_CREDENTIALS_JSON")
 if gcp_creds_json:
