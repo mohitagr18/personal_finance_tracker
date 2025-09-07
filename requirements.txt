@@ -1,21 +1,24 @@
--- Core Application --
-streamlit>=1.37.0,<1.40.0
+# Force newer Pillow first
+pillow>=11.0.0,<12.0.0
+
+# Core Application  
+streamlit>=1.35.0,<1.40.0
 pandas>=2.2.0,<2.3.0
 python-dotenv>=1.0.0,<2.0.0
 
--- AutoGen Framework --
-autogen-agentchat>=0.7.2,<0.8.0
-autogen-core>=0.7.2,<0.8.0
-autogen-ext>=0.7.2,<0.8.0
+# AutoGen Framework
+autogen-agentchat>=0.7.0,<0.8.0
+autogen-core>=0.7.0,<0.8.0
+autogen-ext>=0.7.0,<0.8.0
 
--- AI Model Integration --
+# AI Model Integration
 openai>=1.25.0,<2.0.0
 tiktoken>=0.7.0,<1.0.0
 
--- Google Cloud Services --
+# Google Cloud Services
 google-cloud-documentai>=2.25.0,<3.0.0
 
--- Report Generation & Visualization --
+# Report Generation & Visualization
 tabulate>=0.9.0,<1.0.0
 matplotlib>=3.8.0,<4.0.0
 seaborn>=0.13.0,<1.0.0
