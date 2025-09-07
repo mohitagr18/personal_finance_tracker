@@ -10,3 +10,4 @@ google-cloud-documentai
 tabulate
 matplotlib
 seaborn
+markdown-pdf
