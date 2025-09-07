@@ -171,7 +171,7 @@ if 'last_run_dir' in st.session_state:
             try:
                 from markdown_pdf import MarkdownPdf
                 pdf = MarkdownPdf()
-                pdf.add_section(report_content, toc=False)
+                pdf.add_section(report_content)
                 pdf_bytes = pdf.get_pdf()
                 st.download_button(
                     label="📥 Download Report as PDF",
