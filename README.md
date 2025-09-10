@@ -83,7 +83,7 @@ pip install -r requirements.txt
 
 You will need to provide API keys and configuration details in an environment file.
 
-Create a `.env` file in the root of the project. You can copy the `.env.example` file to get started.
+Create a `.env` file in the root of the project.
 
 **Add your OpenAI API Key:**
 
@@ -117,7 +117,7 @@ If your GCP `project_id` or `processor_id` are different from the ones in the co
 Once the setup is complete, run the Streamlit app from your terminal. Use the `python -m` prefix for best compatibility in virtual environments.
 
 ```bash
-python -m streamlit run streamlit_app.py
+python -m streamlit run st_app.py
 ```
 
 The application will open in your web browser.
