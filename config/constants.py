@@ -28,7 +28,6 @@ LLM_TOP_P = float(os.getenv("LLM_TOP_P", "1"))
 LLM_SEED = int(os.getenv("LLM_SEED", "45"))
 
 # API Keys (ensure this is set in your .env file, e.g., OPENAI_API_KEY="sk-...")
-# The notebooks used OPENAI_API_KEY2; we are standardizing it to OPENAI_API_KEY
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY2")
 
 # Model identifiers used for different tasks
@@ -51,8 +50,3 @@ GCP_PROCESSOR_ID = os.getenv("GCP_PROCESSOR_ID", "bf2685d686b2d8db")
 
 GOOGLE_APPLICATION_CREDENTIALS = os.getenv("GOOGLE_APPLICATION_CREDENTIALS")
 
-
-# NOTE: For authentication, ensure the 'GOOGLE_APPLICATION_CREDENTIALS' environment
-# variable is set to the path of your GCP service account key file.
-# You can set this in your .env file or your system's environment.
-# Example: GOOGLE_APPLICATION_CREDENTIALS="/path/to/your/credentials.json"
